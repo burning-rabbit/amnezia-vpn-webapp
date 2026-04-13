@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Копирование конфига</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card { width: 100%; max-width: 460px; text-align: center; }
+        .icon { font-size: 56px; margin-bottom: 16px; }
+        .title { font-size: 24px; margin-bottom: 10px; }
+        .desc { color: var(--tg-theme-hint-color, #777); margin-bottom: 18px; }
+        .code {
+            display: none;
+            text-align: left;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+            background: var(--tg-theme-secondary-bg-color, #f2f2f2);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+            word-break: break-all;
+            user-select: all;
+        }
+        .btn {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--tg-theme-button-text-color, #fff);
+            background: var(--tg-theme-button-color, #3390ec);
+            margin-top: 10px;
+        }
+        .ok { color: #2e7d32; }
+        .err { color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">📋</div>
+        <h1 class="title" id="title">Копирование конфига...</h1>
+        <p class="desc" id="desc">Подождите, пытаюсь скопировать автоматически.</p>
+        <pre class="code" id="code"></pre>
+        <button class="btn" id="copyBtn" style="display:none">Скопировать и закрыть</button>
+    </div>
+
+    <script>
+        let tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            try {
+                tg.ready();
+                tg.expand();
+            } catch (_) {}
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const vpnUri = params.get("url");
+        const titleEl = document.getElementById("title");
+        const descEl = document.getElementById("desc");
+        const codeEl = document.getElementById("code");
+        const copyBtn = document.getElementById("copyBtn");
+
+        async function copyText(text) {
+            try {
+                if (tg && typeof tg.copyText === "function") {
+                    tg.copyText(text);
+                    return true;
+                }
+            } catch (_) {}
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (_) {}
+            try {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const ok = document.execCommand("copy");
+                document.body.removeChild(ta);
+                return ok;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function copiedState() {
+            titleEl.textContent = "✅ Конфиг скопирован";
+            titleEl.className = "title ok";
+            descEl.textContent = "Теперь откройте VPN-приложение и вставьте конфиг.";
+            setTimeout(() => {
+                if (tg && typeof tg.close === "function") tg.close();
+            }, 600);
+        }
+
+        if (!vpnUri) {
+            titleEl.textContent = "❌ Ошибка";
+            titleEl.className = "title err";
+            descEl.textContent = "Не найден параметр url. Вернитесь в бота и повторите.";
+        } else {
+            codeEl.textContent = vpnUri;
+            codeEl.style.display = "block";
+            copyBtn.style.display = "block";
+
+            copyText(vpnUri).then((ok) => {
+                if (ok) copiedState();
+                else {
+                    titleEl.textContent = "Нажмите кнопку ниже";
+                    descEl.textContent = "Автокопирование не сработало, скопируйте вручную.";
+                }
+            });
+
+            copyBtn.addEventListener("click", async () => {
+                const ok = await copyText(vpnUri);
+                if (ok) copiedState();
+                else {
+                    titleEl.textContent = "❌ Не удалось скопировать";
+                    titleEl.className = "title err";
+                    descEl.textContent = "Выделите текст и скопируйте вручную.";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
