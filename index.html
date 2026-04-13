@@ -30,7 +30,10 @@
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 14px;
-            word-break: break-all;
+            white-space: nowrap;
+            word-break: normal;
+            overflow-x: auto;
+            overflow-y: hidden;
             user-select: all;
         }
         .btn {
@@ -53,7 +56,7 @@
     <div class="card">
         <div class="icon">📋</div>
         <h1 class="title" id="title">Копирование конфига...</h1>
-        <p class="desc" id="desc">Подождите, пытаюсь скопировать автоматически.</p>
+        <p class="desc" id="desc">Нажмите кнопку ниже, чтобы скопировать конфиг.</p>
         <pre class="code" id="code"></pre>
         <button class="btn" id="copyBtn" style="display:none">Скопировать и закрыть</button>
     </div>
@@ -124,7 +127,7 @@
                 if (ok) copiedState();
                 else {
                     titleEl.textContent = "Нажмите кнопку ниже";
-                    descEl.textContent = "Автокопирование не сработало, скопируйте вручную.";
+                    descEl.textContent = "Нажмите кнопку ниже, чтобы скопировать конфиг.";
                 }
             });
 
